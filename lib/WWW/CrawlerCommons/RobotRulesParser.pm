@@ -69,6 +69,12 @@ has 'num_warnings'              => (
 #-----------------------------------------------------------------------------#
 
 
+=head1 METHODS
+
+=over
+
+=cut
+
 # METHODS
 ########################################
 # Construction
@@ -84,6 +90,12 @@ has 'num_warnings'              => (
 # Instance Methods
 #------------------#
 #-----------------------------------------------------------------------------#
+=item C<< $self->parse_content($url, $content, $mime_type, $crawler_name) >>
+
+
+=back
+
+=cut
 sub parse_content {
     my ($self, $url, $content, $content_type, $robot_name) = @_;
 }
@@ -144,9 +156,15 @@ use namespace::autoclean;
 #------------------#
 const my $CRAWLDELAY_MISSPELLINGS=>["crawl delay"];
 const my $DISALLOW_MISSPELLINGS => [qw(desallow dissalow dssalow dsallow)];
-const my $DIRECTIVES_LIST       =>
-  [qw(USER_AGENT DISALLOW ALLOW CRAWL_DELAY SITEMAP HOST NO_INDEX REQUEST_RATE
-      VISIT_TIME ROBOT_VERSION COMMENT HTTP)];
+const my $DIRECTIVES_LIST       => [
+    'USER_AGENT', 'DISALLOW',
+    'ALLOW', 'CRAWL_DELAY', 'SITEMAP',
+    'HOST',
+    'NO_INDEX',
+    # Extended standard
+    'REQUEST_RATE', 'VISIT_TIME', 'ROBOT_VERSION', 'COMMENT',
+    # Treated as sitemap directive
+    'HTTP'];
 const my $DIRECTIVE_PREFIX_MAP  => __PACKAGE__->load_directives_map;
 const my $PREFIX_DIRECTIVES     => [qw(ACAP_)];
 const my $SPECIAL_DIRECTIVES    => [qw(UNKNOWN MISSING)];

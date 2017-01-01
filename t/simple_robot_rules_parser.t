@@ -4,7 +4,7 @@
 
 =head1 NAME
 
-robot_rules_directives.t - unit test for ...
+simple_robot_rules_parser.t - unit test for ...
 
 =head1 DESCRIPTION
 
@@ -23,9 +23,13 @@ use utf8;
 
 # CPAN/Core Imports
 #----------------------#
+use Capture::Tiny qw(:all);
+use Carp qw(verbose carp confess croak);
 use Const::Fast;
+use DateTime;
 use File::HomeDir;
 use Path::Tiny;
+use Sub::Override;
 use Test::Most;
 use Try::Tiny;
 
@@ -34,15 +38,10 @@ use Try::Tiny;
 const my $DEBUG                 => $ENV{DEBUG} // 1;
 const my $TEST                  => $ENV{TEST} // 1;
 
-const my $LF                    => "\n";
-const my $CR                    => "\r";
-const my $CRLF                  => "\r\n";
-const my $FAKE_ROBOTS_URL       => "http://domain.com";
-
 # RUNTIME CONFIGURATION
 ########################
 BEGIN {
-    use_ok('WWW::CrawlerCommons::RobotRulesParser');
+    use_ok('');
 }
 
 # SM Imports
@@ -53,10 +52,7 @@ BEGIN {
 # Setup
 #----------------------#
 try {
-#    my $map = WWW::CrawlerCommons::RobotDirective->directive_map;
-    # test empty rules
-    my $robot_rules = create_robot_rules("Any-darn-crawler", "");
-#    is($robot_rules->is_allowed )
+    
 }
 catch {
     say "Testing ended unexpectedly: $_";
@@ -68,17 +64,4 @@ done_testing;
 # SUBROUTINES
 ########################
 #-----------------------------------------------------------------------------#
-sub create_robot_rules ($$) {
-    my ($crawler_name, $content) = @_;
-
-    my $parser = WWW::CrawlerCommons::RobotRulesParser->new;
-
-    return
-      $parser->parse_content(
-        $FAKE_ROBOTS_URL,
-        $content,
-        "text/plain",
-        $crawler_name);
-}
 #-----------------------------------------------------------------------------#
-
