@@ -38,7 +38,7 @@ use namespace::autoclean;
 
 # Custom Modules
 #------------------#
-
+use WWW::CrawlerCommons::RobotRules;
 
 # VARIABLES/CONSTANTS
 ########################################
@@ -64,7 +64,8 @@ const my $TEST                  => $ENV{TEST} // 0;
 has 'num_warnings'              => (
     default                     => 0,
     is                          => 'ro',
-    isa                         => 'Counter',
+    isa                         => 'Int',
+    traits                      => ['Counter']
 );
 #-----------------------------------------------------------------------------#
 
@@ -98,6 +99,12 @@ has 'num_warnings'              => (
 =cut
 sub parse_content {
     my ($self, $url, $content, $content_type, $robot_name) = @_;
+
+    return WWW::CrawlerCommons::RobotRules->new(
+      _mode => $WWW::CrawlerCommons::RobotRules::ALLOW_ALL)
+        if ( ($content // '') eq '' );
+
+
 }
 #-----------------------------------------------------------------------------#
 

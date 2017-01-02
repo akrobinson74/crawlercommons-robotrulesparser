@@ -4,7 +4,7 @@
 
 =head1 NAME
 
-robot_rules_directives.t - unit test for ...
+robot_rules_parser.t - unit test for ...
 
 =head1 DESCRIPTION
 
@@ -53,10 +53,12 @@ BEGIN {
 # Setup
 #----------------------#
 try {
-#    my $map = WWW::CrawlerCommons::RobotDirective->directive_map;
     # test empty rules
     my $robot_rules = create_robot_rules("Any-darn-crawler", "");
-#    is($robot_rules->is_allowed )
+    say Data::Dumper->Dump( [$robot_rules], ['robot_rules']);
+    is($robot_rules->is_allowed( "http://www.domain.com/anypage.html" ), 1,
+       'test empty rules');
+
 }
 catch {
     say "Testing ended unexpectedly: $_";

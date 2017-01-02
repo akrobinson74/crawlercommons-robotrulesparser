@@ -50,8 +50,11 @@ use namespace::autoclean;
 const my $DEBUG                 => $ENV{DEBUG} // 0;
 const my $TEST                  => $ENV{TEST} // 1;
 
-const my $ROBOT_RULES_MODE      =>
-  [map {lc($_)} qw(ALLOW_ALL ALLOW_NONE ALLOW_SOME)];
+const our $ALLOW_ALL            => 'allow_all';
+const our $ALLOW_NONE           => 'allow_none';
+const our $ALLOW_SOME           => 'allow_some';
+const my $ROBOT_RULES_MODES     =>
+  ["$ALLOW_ALL", "$ALLOW_NONE", "$ALLOW_SOME"];
 
 # Constants
 #------------------#
@@ -70,7 +73,7 @@ const my $ROBOT_RULES_MODE      =>
 #------------------#
 #-----------------------------------------------------------------------------#
 has '_mode'                     => (
-    enum                        => $ROBOT_RULES_MODE,
+    enum                        => $ROBOT_RULES_MODES,
     handles                     => 1,
     is                          => 'ro',
     required                    => 1,
@@ -80,8 +83,8 @@ has '_mode'                     => (
 has '_rules'                    => (
     default                     => sub {[]},
     handles                     => {
-        'add'                   => 'push',
-        'get_rules'             => 'element',
+        '_add'                  => 'push',
+        '_get_rules'            => 'elements',
     },
     is                          => 'ro',
     isa                         => 'ArrayRef[RobotRule]',
@@ -104,6 +107,12 @@ has '_rules'                    => (
 # Instance Methods
 #------------------#
 #-----------------------------------------------------------------------------#
+sub add_rule {
+    my ($self, $prefix, $allow) = @_;
+    $allow = 1 if !$allow && length($prefix) == 0;
+    $self->add( WWW::CrawlerCommons::RobotRule->new( $prefix, $allow ) );
+}
+#-----------------------------------------------------------------------------#
 sub is_allowed {
     my ($self, $url) = @_;
     return 0 if $self->is_allow_none;
@@ -113,8 +122,9 @@ sub is_allowed {
     # always allow robots.txt
     return 1 if $path_with_query eq '/robots.txt';
 
-    for my $rule ($self->get_rules) {
-        return 1 if $self->_rule_matches( $path_with_query, $rule->prefix );
+    for my $rule ($self->_get_rules) {
+        return $rule->_allow
+          if $self->_rule_matches( $path_with_query, $rule->_prefix );
     }
 
     return 1;
@@ -144,6 +154,64 @@ sub _get_path() {
     catch {
         return '/';
     };
+}
+#-----------------------------------------------------------------------------#
+sub _rule_matches {
+    my ($self, $text, $pattern) = @_;
+    my $pattern_pos = my $text_pos = 0;
+    my $pattern_end = length( $pattern );
+    my $text_end = length( $text );
+
+    my $contains_end_char = $pattern =~ m!\$! ? 1 : 0;
+    $pattern_end -= 1 if $contains_end_char;
+
+    while ( ( $pattern_pos < $pattern_end ) && ( $text_pos < $text_end ) ) {
+        my $wildcard_pos = index( $pattern, '*', $pattern_pos );
+        $wildcard_pos = $pattern_end if $wildcard_pos == -1;
+
+        if ( $wildcard_pos == $pattern_pos ) {
+            $pattern_pos += 1;
+            return 1 if $pattern_pos >= $pattern_end;
+
+            my $pattern_piece_end = index( $pattern, '*', $pattern_pos);
+            $pattern_piece_end = $pattern_end if $pattern_piece_end == -1;
+
+            my $matched = 0;
+            my $pattern_piece_len = $pattern_piece_end - $pattern_pos;
+            while ( ( $text_pos + $pattern_piece_len <=  $text_end )
+                    && !$matched ) {
+
+                $matched = 1;
+
+                for ( my $i = 0; $i < $pattern_piece_len && $matched; $i++ ) {
+                    $matched = 0
+                      if substr( $text, $text_pos + $i, 1 ) ne
+                        substr( $pattern, $pattern_pos + $i, 1 );
+                }
+
+                $text_pos += 1 unless $matched;
+            }
+
+            return 0 unless $matched;
+        }
+
+        else {
+            while ( ( $pattern_pos < $wildcard_pos ) &&
+                    ( $text_pos < $text_end ) ) {
+
+                return 0 if substr( $text, $text_pos++, 1) !=
+                  substr( $pattern, $pattern_pos++, 1);
+            }
+        }
+    }
+
+    while ( ( $pattern_pos < $pattern_end ) &&
+            ( substr( $pattern, $pattern_pos, 1 ) eq '*' ) ) {
+        $pattern_pos++;
+    }
+
+    return ( $pattern_pos == $pattern_end ) &&
+        ( ( $text_pos == $text_end ) || !$contains_end_char ) ? 1 : 0;
 }
 #-----------------------------------------------------------------------------#
 ###############################################################################
@@ -219,7 +287,12 @@ use namespace::autoclean;
 has '_allow'                    => (
     is                          => 'ro',
     isa                         => 'Bool',
-    
+    required                    => 1,
+);
+#-----------------------------------------------------------------------------#
+has '_prefix'                   => (
+    is                          => 'ro',
+    isa                         => 'Str',
 );
 #-----------------------------------------------------------------------------#
 
