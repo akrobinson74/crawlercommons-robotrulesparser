@@ -72,6 +72,20 @@ const my $ROBOT_RULES_MODES     =>
 # Instance
 #------------------#
 #-----------------------------------------------------------------------------#
+has '_crawl_delay'              => (
+    default                     => sub {use bigint; -2 ** 63;},
+    is                          => 'rw',
+    isa                         => 'Math::BigInt',
+    writer                      => 'set_crawl_delay',
+);
+#-----------------------------------------------------------------------------#
+has '_defer_visits'             => (
+    default                     => 0,
+    is                          => 'rw',
+    isa                         => 'Bool',
+    traits                      => ['Bool'],
+);
+#-----------------------------------------------------------------------------#
 has '_mode'                     => (
     enum                        => $ROBOT_RULES_MODES,
     handles                     => 1,
@@ -84,10 +98,23 @@ has '_rules'                    => (
     default                     => sub {[]},
     handles                     => {
         '_add'                  => 'push',
+        'clear_rules'           => 'clear',
         '_get_rules'            => 'elements',
+        '_sort_rules'           => 'sort',
     },
     is                          => 'ro',
-    isa                         => 'ArrayRef[RobotRule]',
+    isa                         => 'ArrayRef[WWW::CrawlerCommons::RobotRule]',
+    traits                      => ['Array'],
+);
+#-----------------------------------------------------------------------------#
+has '_sitemaps'                 => (
+    default                     => sub {[]},
+    handles                     => {
+        add_sitemap             => 'push',
+        get_sitemaps            => 'elements',
+    },
+    is                          => 'ro',
+    isa                         => 'ArrayRef[Str]',
     traits                      => ['Array'],
 );
 #-----------------------------------------------------------------------------#
@@ -110,7 +137,10 @@ has '_rules'                    => (
 sub add_rule {
     my ($self, $prefix, $allow) = @_;
     $allow = 1 if !$allow && length($prefix) == 0;
-    $self->add( WWW::CrawlerCommons::RobotRule->new( $prefix, $allow ) );
+    $self->_add(
+      WWW::CrawlerCommons::RobotRule->new( 
+        _prefix => $prefix, _allow => $allow )
+    );
 }
 #-----------------------------------------------------------------------------#
 sub is_allowed {
@@ -130,6 +160,15 @@ sub is_allowed {
     return 1;
 }
 #-----------------------------------------------------------------------------#
+sub sort_rules {
+    return shift->_sort_rules( 
+      sub {
+          length( $_[0]->_prefix ) <=> length( $_[1]->_prefix ) ||
+            $_[1]->_allow <=> $_[0]->_allow;
+      }
+    );
+}
+#-----------------------------------------------------------------------------#
 
 # Private Methods
 #------------------#
@@ -140,15 +179,17 @@ sub _get_path() {
     try {
         my $uri = URI->new( $url );
         my $path = $uri->path();
-        my $query = $uri->path_query() // '';
+        my $path_query = $uri->path_query() // '';
 
-        $path .= '?' + $query if ($with_query && $query ne ''); 
+        $path = $path_query if ($with_query && $path_query ne ''); 
 
         if (not(defined($path)) || $path eq '') {
             return '/';
         }
         else {
-            return uri_unescape( $url );
+            $path = uri_unescape( $path );
+            utf8::encode( $path );
+            return $path;
         }
     }
     catch {
@@ -168,6 +209,14 @@ sub _rule_matches {
     while ( ( $pattern_pos < $pattern_end ) && ( $text_pos < $text_end ) ) {
         my $wildcard_pos = index( $pattern, '*', $pattern_pos );
         $wildcard_pos = $pattern_end if $wildcard_pos == -1;
+
+        say STDERR <<"DUMP" if $DEBUG > 2;
+# _rule_matches wildcard...
+############################
+pattern         $pattern
+pattern_end     $pattern_end
+wildcard_pos    $wildcard_pos
+DUMP
 
         if ( $wildcard_pos == $pattern_pos ) {
             $pattern_pos += 1;
@@ -199,7 +248,16 @@ sub _rule_matches {
             while ( ( $pattern_pos < $wildcard_pos ) &&
                     ( $text_pos < $text_end ) ) {
 
-                return 0 if substr( $text, $text_pos++, 1) !=
+                # DEBUG
+                say STDERR <<"DUMP" if $DEBUG > 2;
+# _rule_matches dump
+#####################
+text        $text
+text_pos    $text_pos
+pattern     $pattern
+pattern_pos $pattern_pos
+DUMP
+                return 0 if substr( $text, $text_pos++, 1) ne
                   substr( $pattern, $pattern_pos++, 1);
             }
         }

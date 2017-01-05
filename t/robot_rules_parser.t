@@ -25,6 +25,7 @@ use utf8;
 #----------------------#
 use Const::Fast;
 use File::HomeDir;
+use Log::Log4perl qw(:easy);
 use Path::Tiny;
 use Test::Most;
 use Try::Tiny;
@@ -42,6 +43,7 @@ const my $FAKE_ROBOTS_URL       => "http://domain.com";
 # RUNTIME CONFIGURATION
 ########################
 BEGIN {
+    Log::Log4perl->easy_init();
     use_ok('WWW::CrawlerCommons::RobotRulesParser');
 }
 
@@ -53,12 +55,27 @@ BEGIN {
 # Setup
 #----------------------#
 try {
+    no warnings 'portable'; 
+
     # test empty rules
     my $robot_rules = create_robot_rules("Any-darn-crawler", "");
-    say Data::Dumper->Dump( [$robot_rules], ['robot_rules']);
+    say STDERR Data::Dumper->Dump( [$robot_rules], ['robot_rules']) if $DEBUG > 1;
     is($robot_rules->is_allowed( "http://www.domain.com/anypage.html" ), 1,
        'test empty rules');
 
+    # test query param in disallow
+    my $robots_txt =
+      join( $CRLF,
+        "User-agent: *",
+        "Disallow: /index.cfm?fuseaction=sitesearch.results*" );
+    $robot_rules = create_robot_rules("Any-darn-crawler", $robots_txt);
+
+    say STDERR Data::Dumper->Dump([$robot_rules],['rules']) if $DEBUG > 1;
+
+    is(
+      $robot_rules->is_allowed( "http://searchservice.domain.com/index.cfm?fuseaction=sitesearch.results&type=People&qry=california&pg=2" ),
+      0,
+      'query param in disallow');
 }
 catch {
     say "Testing ended unexpectedly: $_";
