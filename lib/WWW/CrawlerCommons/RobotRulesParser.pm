@@ -224,7 +224,7 @@ sub parse_content {
 
     my $robot_rules = $parse_state->current_rules();
     if ( $robot_rules->_crawl_delay > $MAX_CRAWL_DELAY ) {
-        return WWW::CrawlerCommons::RobotRules->(
+        return WWW::CrawlerCommons::RobotRules->new(
           _mode => $WWW::CrawlerCommons::RobotRules::ALLOW_NONE );
     }
     else {

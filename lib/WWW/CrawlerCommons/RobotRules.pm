@@ -73,9 +73,9 @@ const my $ROBOT_RULES_MODES     =>
 #------------------#
 #-----------------------------------------------------------------------------#
 has '_crawl_delay'              => (
-    default                     => sub {use bigint; -2 ** 63;},
+    default                     => sub { 0xffffffff * -1 },
     is                          => 'rw',
-    isa                         => 'Math::BigInt',
+    isa                         => 'Int',
     writer                      => 'set_crawl_delay',
 );
 #-----------------------------------------------------------------------------#

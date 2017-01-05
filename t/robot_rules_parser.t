@@ -55,8 +55,6 @@ BEGIN {
 # Setup
 #----------------------#
 try {
-    no warnings 'portable'; 
-
     # test empty rules
     my $robot_rules = create_robot_rules("Any-darn-crawler", "");
     say STDERR Data::Dumper->Dump( [$robot_rules], ['robot_rules']) if $DEBUG > 1;
