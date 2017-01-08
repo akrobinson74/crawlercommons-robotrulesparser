@@ -1,10 +1,10 @@
 =head1 NAME
 
-WWW::CrawlerCommons::RobotRules - 
+WWW::CrawlerCommons::Robots::RobotRules - 
 
 =head1 SYNOPSIS
 
- use WWW::CrawlerCommons::RobotRules;
+ use WWW::CrawlerCommons::Robots::RobotRules;
 
 =head1 DESCRIPTION
 
@@ -12,7 +12,7 @@ WWW::CrawlerCommons::RobotRules -
 =cut
 
 ###############################################################################
-package WWW::CrawlerCommons::RobotRules;
+package WWW::CrawlerCommons::Robots::RobotRules;
 
 # MODULE IMPORTS
 ########################################
@@ -55,6 +55,7 @@ const our $ALLOW_NONE           => 'allow_none';
 const our $ALLOW_SOME           => 'allow_some';
 const my $ROBOT_RULES_MODES     =>
   ["$ALLOW_ALL", "$ALLOW_NONE", "$ALLOW_SOME"];
+const our $UNSET_CRAWL_DELAY    => 0xffffffff * -1;
 
 # Constants
 #------------------#
@@ -72,8 +73,8 @@ const my $ROBOT_RULES_MODES     =>
 # Instance
 #------------------#
 #-----------------------------------------------------------------------------#
-has '_crawl_delay'              => (
-    default                     => sub { 0xffffffff * -1 },
+has 'crawl_delay'               => (
+    default                     => $UNSET_CRAWL_DELAY,
     is                          => 'rw',
     isa                         => 'Int',
     writer                      => 'set_crawl_delay',
@@ -97,21 +98,24 @@ has '_mode'                     => (
 has '_rules'                    => (
     default                     => sub {[]},
     handles                     => {
-        '_add'                  => 'push',
+        '_add_rule'             => 'push',
         'clear_rules'           => 'clear',
         '_get_rules'            => 'elements',
-        '_sort_rules'           => 'sort',
     },
     is                          => 'ro',
-    isa                         => 'ArrayRef[WWW::CrawlerCommons::RobotRule]',
+    isa                         =>
+      'ArrayRef[WWW::CrawlerCommons::Robots::RobotRule]',
     traits                      => ['Array'],
+    writer                      => '_set_rules',
 );
 #-----------------------------------------------------------------------------#
 has '_sitemaps'                 => (
     default                     => sub {[]},
     handles                     => {
-        add_sitemap             => 'push',
+        _add_sitemap            => 'push',
+        get_sitemap             => 'get',
         get_sitemaps            => 'elements',
+        sitemaps_size           => 'count',
     },
     is                          => 'ro',
     isa                         => 'ArrayRef[Str]',
@@ -137,10 +141,15 @@ has '_sitemaps'                 => (
 sub add_rule {
     my ($self, $prefix, $allow) = @_;
     $allow = 1 if !$allow && length($prefix) == 0;
-    $self->_add(
-      WWW::CrawlerCommons::RobotRule->new( 
+    $self->_add_rule(
+      WWW::CrawlerCommons::Robots::RobotRule->new( 
         _prefix => $prefix, _allow => $allow )
     );
+}
+#-----------------------------------------------------------------------------#
+sub add_sitemap {
+    my ($self, $sitemap) = @_;
+    $self->_add_sitemap( $sitemap );
 }
 #-----------------------------------------------------------------------------#
 sub is_allowed {
@@ -161,12 +170,22 @@ sub is_allowed {
 }
 #-----------------------------------------------------------------------------#
 sub sort_rules {
-    return shift->_sort_rules( 
-      sub {
-          length( $_[0]->_prefix ) <=> length( $_[1]->_prefix ) ||
-            $_[1]->_allow <=> $_[0]->_allow;
-      }
+    my $self = shift;
+##    my $unsored_rules = $self->_rules;
+##    my @sorted_rules =
+#    $self->_sort_rules( 
+#      sub {
+#          length( $_[1]->_prefix ) <=> length( $_[0]->_prefix ) ||
+#            $_[1]->_allow <=> $_[0]->_allow;
+#      }
+#    );
+#    say STDERR Data::Dumper->Dump([$unsored_rules, \@sorted_rules],['before','after']);
+    $self->_set_rules(
+        [ sort {length( $b->_prefix ) <=> length( $a->_prefix ) ||
+                $b->_allow <=> $a->_allow} @{ $self->_rules }
+        ]
     );
+
 }
 #-----------------------------------------------------------------------------#
 
@@ -210,7 +229,7 @@ sub _rule_matches {
         my $wildcard_pos = index( $pattern, '*', $pattern_pos );
         $wildcard_pos = $pattern_end if $wildcard_pos == -1;
 
-        say STDERR <<"DUMP" if $DEBUG > 2;
+        say STDERR <<"DUMP" if $DEBUG;
 # _rule_matches wildcard...
 ############################
 pattern         $pattern
@@ -280,11 +299,11 @@ __PACKAGE__->meta->make_immutable;
 
 =head1 NAME
 
-WWW::CrawlerCommons::RobotRule - 
+WWW::CrawlerCommons::Robots::RobotRule - 
 
 =head1 SYNOPSIS
 
- use WWW::CrawlerCommons::RobotRule;
+ use WWW::CrawlerCommons::Robots::RobotRule;
 
 =head1 DESCRIPTION
 
@@ -292,7 +311,7 @@ WWW::CrawlerCommons::RobotRule -
 =cut
 
 ###############################################################################
-package WWW::CrawlerCommons::RobotRule;
+package WWW::CrawlerCommons::Robots::RobotRule;
 
 # MODULE IMPORTS
 ########################################

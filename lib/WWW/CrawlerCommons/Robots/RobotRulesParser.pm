@@ -1,10 +1,18 @@
 =head1 NAME
 
-WWW::CrawlerCommons::RobotRulesParser - 
+WWW::CrawlerCommons::Robots::RobotRulesParser - 
+
+=head1 VERSION
+
+Version 0.01
+
+=cut
+
+our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
- use WWW::CrawlerCommons::RobotRulesParser;
+ use WWW::CrawlerCommons::Robots::RobotRulesParser;
 
 =head1 DESCRIPTION
 
@@ -12,7 +20,7 @@ WWW::CrawlerCommons::RobotRulesParser -
 =cut
 
 ###############################################################################
-package WWW::CrawlerCommons::RobotRulesParser;
+package WWW::CrawlerCommons::Robots::RobotRulesParser;
 
 # MODULE IMPORTS
 ########################################
@@ -26,6 +34,7 @@ use warnings;
 # CPAN/Core
 #------------------#
 use Const::Fast;
+use Encode qw(decode encode);
 use Try::Tiny;
 use URI::Escape;
 
@@ -40,10 +49,10 @@ with 'MooseX::Log::Log4perl';
 
 # Custom Modules
 #------------------#
-use WWW::CrawlerCommons::RobotDirective;
-use WWW::CrawlerCommons::ParseState;
-use WWW::CrawlerCommons::RobotRules;
-use WWW::CrawlerCommons::RobotToken;
+use WWW::CrawlerCommons::Robots::RobotDirective;
+use WWW::CrawlerCommons::Robots::ParseState;
+use WWW::CrawlerCommons::Robots::RobotRules;
+use WWW::CrawlerCommons::Robots::RobotToken;
 
 # VARIABLES/CONSTANTS
 ########################################
@@ -51,6 +60,9 @@ use WWW::CrawlerCommons::RobotToken;
 #------------------#
 const my $DEBUG                 => $ENV{DEBUG} // 0;
 const my $TEST                  => $ENV{TEST} // 0;
+
+const my $BLANK_DIRECTIVE_PATTERN=> qr![ \t]+(.*)!o;
+const my $COLON_DIRECTIVE_PATTERN=> qr![ \t]*:[ \t]*(.*)!o;
 
 const my $MAX_CRAWL_DELAY       => 300000;
 const my $MAX_WARNINGS          => 5;
@@ -111,26 +123,48 @@ has 'num_warnings'              => (
 sub parse_content {
     my ($self, $url, $content, $content_type, $robot_name) = @_;
 
-    return WWW::CrawlerCommons::RobotRules->new(
-      _mode => $WWW::CrawlerCommons::RobotRules::ALLOW_ALL)
+    return WWW::CrawlerCommons::Robots::RobotRules->new(
+      _mode => $WWW::CrawlerCommons::Robots::RobotRules::ALLOW_ALL)
         if ( ($content // '') eq '' );
 
     my $content_len = length( $content );
     my $offset = 0;
 
-    # do checks for UTF-8, UTF-16LE, UTF-16BE
+    # handle UTF-8, UTF-16LE, UTF-16BE content
+    if ( ($content_len >= 3) && (substr($content, 0, 1) eq "\xEF") &&
+         (substr($content, 1, 1) eq "\xBB") &&
+         (substr($content, 2, 1) eq "\xBF") ) {
+        $offset = 3;
+        $content_len -= 3;
+        $content = substr( $content, 3);
+        $content = decode('UTF-8', $content);
+    }
+    elsif ( ($content_len >= 2) && (substr($content, 0, 1) eq "\xFF") &&
+         (substr($content, 1, 1) eq "\xFE") ) {
+        $offset = 2;
+        $content_len -= 2;
+        $content = substr( $content, 2);
+        $content = decode('UTF-16LE', $content);
+    }
+    elsif ( ($content_len >= 2) && (substr($content, 0, 1) eq "\xFE") &&
+         (substr($content, 1, 1) eq "\xFF") ) {
+        $offset = 2;
+        $content_len -= 2;
+        $content = substr( $content, 2);
+        $content = decode('UTF-16BE', $content);
+    }
 
     # set flags that trigger the stripping of '<' and '>' from content
-    my $is_html_type = ($content_type//'') ne '' &&
-      lc( $content_type ) =~ m!^text/html! ? 1 : 0;
+    my $is_html_type = ($content_type // '') ne '' &&
+      lc( $content_type // '') =~ m!^text/html! ? 1 : 0;
 
     my $has_html = 0;
     if ( $is_html_type || ($content // '') =~ $SIMPLE_HTML_PATTERN ) {
-        if ( ($content // '') =~ $USER_AGENT_PATTERN ) {
+        if ( ($content // '') !~ $USER_AGENT_PATTERN ) {
             $self->log->trace( "Found non-robots.txt HTML file: $url");
 
-            return WWW::CrawlerCommons::RobotRules->new(
-              _mode => $WWW::CrawlerCommons::RobotRules::ALLOW_ALL);
+            return WWW::CrawlerCommons::Robots::RobotRules->new(
+              _mode => $WWW::CrawlerCommons::Robots::RobotRules::ALLOW_ALL);
         }
 
         else {
@@ -147,8 +181,12 @@ sub parse_content {
     }
 
     my $parse_state =
-      WWW::CrawlerCommons::ParseState->new(
+      WWW::CrawlerCommons::Robots::ParseState->new(
         url => $url, target_name => lc($robot_name) );
+
+    # DEBUG
+    $self->log->error(Data::Dumper->Dump([$parse_state],['parse_state1']))
+      if $DEBUG > 2;
 
     for my $line ( split( m!(?:\n|\r|\r\n|\x0085|\x2028|\x2029)!, $content) ) {
         $self->log->debug("Input Line: [$line]\n");
@@ -163,6 +201,7 @@ sub parse_content {
 
         # trim whitespace
         $line =~ s!^\s+|\s+$!!;
+        next if length( $line ) == 0;
 
         my $robot_token = $self->_tokenize( $line );
 
@@ -222,10 +261,14 @@ sub parse_content {
         } if $robot_token->directive->is_unknown;
     }
 
+    # DEBUG
+    $self->log->error(Data::Dumper->Dump([$parse_state],['parse_state2']))
+      if $DEBUG > 2;
+
     my $robot_rules = $parse_state->current_rules();
-    if ( $robot_rules->_crawl_delay > $MAX_CRAWL_DELAY ) {
-        return WWW::CrawlerCommons::RobotRules->new(
-          _mode => $WWW::CrawlerCommons::RobotRules::ALLOW_NONE );
+    if ( $robot_rules->crawl_delay > $MAX_CRAWL_DELAY ) {
+        return WWW::CrawlerCommons::Robots::RobotRules->new(
+          _mode => $WWW::CrawlerCommons::Robots::RobotRules::ALLOW_NONE );
     }
     else {
         $robot_rules->sort_rules;
@@ -273,6 +316,9 @@ sub _handle_allow { shift->_handle_allow_or_disallow( @_, 1 ); }
 sub _handle_crawl_delay {
     my ($self, $state, $token) = @_;
 
+    $self->log->debug(Data::Dumper->Dump([$state, $token],['state','token']))
+      if $DEBUG > 1;
+
     return if $state->is_skip_agents;
 
     $state->is_finished_agent_fields( 1 );
@@ -298,10 +344,11 @@ sub _handle_http {
     my ($self, $state, $token) = @_;
     my $url_fragment = $token->data;
     if ( index( $url_fragment, 'sitemap' ) ) {
-        my $fixed_token = WWW::CrawlerCommons::RobotToken->new(
+        my $fixed_token = WWW::CrawlerCommons::Robots::RobotToken->new(
             data        => 'http:' . $url_fragment,
             directive   =>
-            WWW::CrawlerCommons::RobotDirective->get_directive('sitemap'),
+            WWW::CrawlerCommons::Robots::RobotDirective
+             ->get_directive('sitemap'),
         );
         $self->_handle_sitemap( $state, $fixed_token );
     }
@@ -315,9 +362,19 @@ sub _handle_sitemap {
     my ($self, $state, $token) = @_;
     my $sitemap = $token->data;
     try {
-        my $sitemap_url = URI->new( $sitemap, URI->new( $state->url ) );
-        $state->add_sitemap( $sitemap_url )
-          if ( ($sitemap_url->host // '') ne '' );
+        my $sitemap_url = URI->new_abs( $sitemap, URI->new( $state->url ) );
+        my $host = $sitemap_url->host() // '';
+
+        $self->log->debug(<<"DUMP") if $DEBUG > 1;
+# _handle_sitemap
+###################
+sitemap     $sitemap
+sitemap_url $sitemap_url
+host        $host
+url         ${\$state->url}
+DUMP
+
+        $state->add_sitemap( $sitemap_url->as_string ) if ( $host ne '' );
     }
     catch {
         $self->_report_warning( "Invalid URL with sitemap directive: $sitemap",
@@ -328,7 +385,7 @@ sub _handle_sitemap {
 sub _handle_user_agent {
     my ($self, $state, $token) = @_;
     if ( $state->is_matched_real_name ) {
-        $state->is_skip_agents( 1 ) if $self->is_finished_agent_fields;
+        $state->is_skip_agents( 1 ) if $state->is_finished_agent_fields;
         return;
     }
 
@@ -347,7 +404,7 @@ sub _handle_user_agent {
              }
              elsif ($agent_name ne '') {
                  for my $target_name_split ( split(/ /, $target_name) ) {
-                     if (index( $target_name_split, $agent_name ) >= 0 ) {
+                     if (index( $target_name_split, $agent_name ) == 0 ) {
                          $state->is_matched_real_name( 1 );
                          $state->is_adding_rules( 1 );
                          $state->clear_rules;
@@ -372,29 +429,52 @@ sub _report_warning {
 #-----------------------------------------------------------------------------#
 sub _tokenize {
     my ($self, $line) = @_;
-    my $lower_line = lc( $line );
-    my ($directive, $data) = ($lower_line =~ m!^([^:\s]+):?(?:[ \t]*(.*)|[ \t]+(.*))!);
-    $directive //= '';
-    $data //= '';
-    $data =~ s!^\s+|\s+$!!;
 
-    if ( $directive =~ m!^acap-! ||
-         WWW::CrawlerCommons::RobotDirective->directive_exists( $directive ) ){
+    $self->log->debug("Parsing line: [$line]") if $DEBUG;
+
+    my $lower_line = lc( $line );
+    my ($directive) = ($lower_line =~ m!^([^:\s]+)!);
+    $directive //= '';
+
+    if ( $directive =~ m!^acap\-! ||
+         WWW::CrawlerCommons::Robots::RobotDirective->directive_exists( $directive ) ){
+
+        my ($d1, $d2);
+        my $data_portion = substr($line, length( $directive ));
+        $d1 = ( my $data ) = ( $data_portion =~ m!$COLON_DIRECTIVE_PATTERN! );
+        $d2 = ( $data ) = ( $data_portion =~ m!$BLANK_DIRECTIVE_PATTERN! )
+          unless defined $data;
+        $data //= '';
+        $data =~ s!^\s+|\s+$!!;
+
+        $d1 //= '';
+        $d2 //= '';
+
+        $self->log->debug(<<"DUMP") if $DEBUG;
+# _tokenize dump
+#################
+line            [$line]
+directive       [$directive]
+data_portion    [$data_portion]
+d1              [$d1]
+d2              [$d2]
+data            [$data]
+DUMP
 
         my $robot_directive =
-          WWW::CrawlerCommons::RobotDirective->get_directive(
+          WWW::CrawlerCommons::Robots::RobotDirective->get_directive(
             $directive =~ m!^acap-!i ? 'acap-' : $directive );  
 
-        return WWW::CrawlerCommons::RobotToken->new(
+        return WWW::CrawlerCommons::Robots::RobotToken->new(
           data => $data, directive => $robot_directive
         );
     }
     else {
         my $robot_directive =
-        WWW::CrawlerCommons::RobotDirective->get_directive(
+        WWW::CrawlerCommons::Robots::RobotDirective->get_directive(
           $lower_line =~ m![ \t]*:[ \t]*(.*)! ? 'unknown' : 'missing' );
 
-        return WWW::CrawlerCommons::RobotToken->new(
+        return WWW::CrawlerCommons::Robots::RobotToken->new(
           data => $line, directive => $robot_directive
         ); 
     }

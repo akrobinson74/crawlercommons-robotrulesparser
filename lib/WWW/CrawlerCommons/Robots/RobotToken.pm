@@ -1,10 +1,10 @@
 =head1 NAME
 
-WWW::CrawlerCommons::RobotToken - 
+WWW::CrawlerCommons::Robots::RobotToken - 
 
 =head1 SYNOPSIS
 
- use WWW::CrawlerCommons::RobotToken;
+ use WWW::CrawlerCommons::Robots::RobotToken;
 
 =head1 DESCRIPTION
 
@@ -12,7 +12,7 @@ WWW::CrawlerCommons::RobotToken -
 =cut
 
 ###############################################################################
-package WWW::CrawlerCommons::RobotToken;
+package WWW::CrawlerCommons::Robots::RobotToken;
 
 # MODULE IMPORTS
 ########################################
@@ -72,7 +72,8 @@ has 'data'                      => (
 #-----------------------------------------------------------------------------#
 has 'directive'                 => (
     is                          => 'ro',
-    isa                         => 'WWW::CrawlerCommons::RobotDirective',
+    isa                         =>
+    'WWW::CrawlerCommons::Robots::RobotDirective',
     required                    => 1,
 );
 #-----------------------------------------------------------------------------#
