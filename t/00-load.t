@@ -7,7 +7,7 @@ use Test::More;
 plan tests => 1;
 
 BEGIN {
-    use_ok( 'WWW::CrawlerCommons' ) || print "Bail out!\n";
+    use_ok( 'CrawlerCommons::RobotRulesParser' ) || print "Bail out!\n";
 }
 
-diag( "Testing WWW::CrawlerCommons $WWW::CrawlerCommons::VERSION, Perl $], $^X" );
+diag( "Testing CrawlerCommons::RobotRulesParser $CrawlerCommons::RobotRulesParser::VERSION, Perl $], $^X" );

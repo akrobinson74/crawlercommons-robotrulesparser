@@ -45,7 +45,7 @@ const my $FAKE_ROBOTS_URL       => "http://domain.com";
 BEGIN {
     $| = 1;
     Log::Log4perl->easy_init($ERROR);
-    use_ok('WWW::CrawlerCommons::Robots::RobotRulesParser');
+    use_ok('CrawlerCommons::RobotRulesParser');
 }
 
 # SM Imports
@@ -211,7 +211,7 @@ done_testing;
 sub create_robot_rules {
     my ($crawler_name, $content) = @_;
 
-    my $parser = WWW::CrawlerCommons::Robots::RobotRulesParser->new;
+    my $parser = CrawlerCommons::RobotRulesParser->new;
 
     return
       $parser->parse_content(
@@ -245,7 +245,7 @@ sub test_commented_out_lines {
 sub test_acap_fields {
     my $robots_txt =
       "acap-crawler: *" . $CRLF . "acap-disallow-crawl: /ultima_ora/";
-    my $parser = WWW::CrawlerCommons::Robots::RobotRulesParser->new;
+    my $parser = CrawlerCommons::RobotRulesParser->new;
     my $rr = $parser->parse_content("url", $robots_txt, "text/plain", "foobot");
     is($parser->num_warnings(), 0);
 }
@@ -315,7 +315,7 @@ sub test_crawl_delay {
       "User-agent: *" . $CR . "Disallow:/baz" . $CR;
 
     $robot_rules = create_robot_rules("bixo", $robots_txt);
-    is($WWW::CrawlerCommons::Robots::RobotRules::UNSET_CRAWL_DELAY ,
+    is($CrawlerCommons::RobotRules::UNSET_CRAWL_DELAY ,
        $robot_rules->crawl_delay,
        "testing crawl delay for agent bixo - rule 2");
 }
@@ -378,7 +378,7 @@ sub test_empty_rules {
 }
 #-----------------------------------------------------------------------------#
 sub test_extended_standard {
-    my $parser = WWW::CrawlerCommons::Robots::RobotRulesParser->new;
+    my $parser = CrawlerCommons::RobotRulesParser->new;
     my $rr = $parser->parse_content(
       "url",
       path(__FILE__)->parent->child("./robots/extended-standard-robots.txt")
@@ -528,7 +528,7 @@ sub test_heritrix_cases {
     $robot_rules = create_robot_rules("Mozilla denybot 99.9", $robots_txt);
     is($robot_rules->is_allowed("http://www.domain.com/path"), 0);
     is($robot_rules->is_allowed("http://www.domain.com/"), 0);
-    is($WWW::CrawlerCommons::Robots::RobotRules::UNSET_CRAWL_DELAY,
+    is($CrawlerCommons::RobotRules::UNSET_CRAWL_DELAY,
        $robot_rules->crawl_delay);
 
     $robot_rules = create_robot_rules("Mozilla anonbot 99.9", $robots_txt);

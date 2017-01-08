@@ -1,11 +1,11 @@
 
 =head1 NAME
 
-WWW::CrawlerCommons::Robots::RobotDirective - 
+CrawlerCommons::RobotDirective - 
 
 =head1 SYNOPSIS
 
- use WWW::CrawlerCommons::Robots::RobotDirective;
+ use CrawlerCommons::RobotDirective;
 
 =head1 DESCRIPTION
 
@@ -13,7 +13,7 @@ WWW::CrawlerCommons::Robots::RobotDirective -
 =cut
 
 ###############################################################################
-package WWW::CrawlerCommons::Robots::RobotDirective;
+package CrawlerCommons::RobotDirective;
 
 # MODULE IMPORTS
 ########################################

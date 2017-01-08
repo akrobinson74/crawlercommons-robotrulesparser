@@ -1,18 +1,27 @@
 =head1 NAME
 
-WWW::CrawlerCommons::Robots::RobotRulesParser - 
-
-=head1 VERSION
-
-Version 0.01
-
-=cut
-
-our $VERSION = '0.01';
+CrawlerCommons::RobotRulesParser - 
 
 =head1 SYNOPSIS
 
- use WWW::CrawlerCommons::Robots::RobotRulesParser;
+ use CrawlerCommons::RobotRulesParser;
+
+ my $rules_parser = CrawlerCommons::RobotRulesParser->new;
+ 
+ my $content = "User-agent: *\r\nDisallow: *images";
+ my $content_type = "text/plain";
+ my $robot_names = "any-old-robot";
+ my $url = "http://domain.com/";
+
+ my $robot_rules =
+   $rules_parser->parse_content($url, $content, $content_type, $robot_names);
+
+ say "We're allowed to crawl the index :)"
+  if $robot_rules->is_allowed( "https://www.domain.com/index.html");
+
+ say "Not allowed to crawl: $_" unless $robot_rules->is_allowed( $_ )
+   for ("http://www.domain.com/images/some_file.png",
+        "http://www.domain.com/images/another_file.png");
 
 =head1 DESCRIPTION
 
@@ -20,7 +29,8 @@ our $VERSION = '0.01';
 =cut
 
 ###############################################################################
-package WWW::CrawlerCommons::Robots::RobotRulesParser;
+package CrawlerCommons::RobotRulesParser;
+
 
 # MODULE IMPORTS
 ########################################
@@ -49,10 +59,10 @@ with 'MooseX::Log::Log4perl';
 
 # Custom Modules
 #------------------#
-use WWW::CrawlerCommons::Robots::RobotDirective;
-use WWW::CrawlerCommons::Robots::ParseState;
-use WWW::CrawlerCommons::Robots::RobotRules;
-use WWW::CrawlerCommons::Robots::RobotToken;
+use CrawlerCommons::RobotDirective;
+use CrawlerCommons::ParseState;
+use CrawlerCommons::RobotRules;
+use CrawlerCommons::RobotToken;
 
 # VARIABLES/CONSTANTS
 ########################################
@@ -71,6 +81,22 @@ const my $USER_AGENT_PATTERN    => qr!user-agent:!i;
 
 # Variables
 #------------------#
+
+# setup 
+BEGIN {
+    require Log::Log4perl;
+    Log::Log4perl->easy_init($Log::Log4perl::ERROR)
+      unless $Log::Log4perl::Logger::INITIALIZED;
+}
+
+=head1 VERSION
+
+Version 0.01
+
+=cut
+
+our $VERSION = '0.01';
+
 
 
 # MOOSE ATTRIBUTES
@@ -117,14 +143,15 @@ has 'num_warnings'              => (
 =item C<< $self->parse_content($url, $content, $mime_type, $crawler_name) >>
 
 
+
 =back
 
 =cut
 sub parse_content {
     my ($self, $url, $content, $content_type, $robot_name) = @_;
 
-    return WWW::CrawlerCommons::Robots::RobotRules->new(
-      _mode => $WWW::CrawlerCommons::Robots::RobotRules::ALLOW_ALL)
+    return CrawlerCommons::RobotRules->new(
+      _mode => $CrawlerCommons::RobotRules::ALLOW_ALL)
         if ( ($content // '') eq '' );
 
     my $content_len = length( $content );
@@ -163,8 +190,8 @@ sub parse_content {
         if ( ($content // '') !~ $USER_AGENT_PATTERN ) {
             $self->log->trace( "Found non-robots.txt HTML file: $url");
 
-            return WWW::CrawlerCommons::Robots::RobotRules->new(
-              _mode => $WWW::CrawlerCommons::Robots::RobotRules::ALLOW_ALL);
+            return CrawlerCommons::RobotRules->new(
+              _mode => $CrawlerCommons::RobotRules::ALLOW_ALL);
         }
 
         else {
@@ -181,7 +208,7 @@ sub parse_content {
     }
 
     my $parse_state =
-      WWW::CrawlerCommons::Robots::ParseState->new(
+      CrawlerCommons::ParseState->new(
         url => $url, target_name => lc($robot_name) );
 
     # DEBUG
@@ -267,8 +294,8 @@ sub parse_content {
 
     my $robot_rules = $parse_state->current_rules();
     if ( $robot_rules->crawl_delay > $MAX_CRAWL_DELAY ) {
-        return WWW::CrawlerCommons::Robots::RobotRules->new(
-          _mode => $WWW::CrawlerCommons::Robots::RobotRules::ALLOW_NONE );
+        return CrawlerCommons::RobotRules->new(
+          _mode => $CrawlerCommons::RobotRules::ALLOW_NONE );
     }
     else {
         $robot_rules->sort_rules;
@@ -344,10 +371,10 @@ sub _handle_http {
     my ($self, $state, $token) = @_;
     my $url_fragment = $token->data;
     if ( index( $url_fragment, 'sitemap' ) ) {
-        my $fixed_token = WWW::CrawlerCommons::Robots::RobotToken->new(
+        my $fixed_token = CrawlerCommons::RobotToken->new(
             data        => 'http:' . $url_fragment,
             directive   =>
-            WWW::CrawlerCommons::Robots::RobotDirective
+            CrawlerCommons::RobotDirective
              ->get_directive('sitemap'),
         );
         $self->_handle_sitemap( $state, $fixed_token );
@@ -437,7 +464,7 @@ sub _tokenize {
     $directive //= '';
 
     if ( $directive =~ m!^acap\-! ||
-         WWW::CrawlerCommons::Robots::RobotDirective->directive_exists( $directive ) ){
+         CrawlerCommons::RobotDirective->directive_exists( $directive ) ){
 
         my ($d1, $d2);
         my $data_portion = substr($line, length( $directive ));
@@ -462,19 +489,19 @@ data            [$data]
 DUMP
 
         my $robot_directive =
-          WWW::CrawlerCommons::Robots::RobotDirective->get_directive(
+          CrawlerCommons::RobotDirective->get_directive(
             $directive =~ m!^acap-!i ? 'acap-' : $directive );  
 
-        return WWW::CrawlerCommons::Robots::RobotToken->new(
+        return CrawlerCommons::RobotToken->new(
           data => $data, directive => $robot_directive
         );
     }
     else {
         my $robot_directive =
-        WWW::CrawlerCommons::Robots::RobotDirective->get_directive(
+        CrawlerCommons::RobotDirective->get_directive(
           $lower_line =~ m![ \t]*:[ \t]*(.*)! ? 'unknown' : 'missing' );
 
-        return WWW::CrawlerCommons::Robots::RobotToken->new(
+        return CrawlerCommons::RobotToken->new(
           data => $line, directive => $robot_directive
         ); 
     }

@@ -2,18 +2,18 @@
 
 =head1 NAME
 
-WWW::CrawlerCommons::Robots::ParseState - 
+CrawlerCommons::ParseState - 
 
 =head1 SYNOPSIS
 
- use WWW::CrawlerCommons::Robots::ParseState;
+ use CrawlerCommons::ParseState;
 
 =head1 DESCRIPTION
 
 
 =cut
 ###############################################################################
-package WWW::CrawlerCommons::Robots::ParseState;
+package CrawlerCommons::ParseState;
 
 # MODULE IMPORTS
 ########################################
@@ -35,7 +35,7 @@ use namespace::autoclean;
 
 # Custom Modules
 #------------------#
-use WWW::CrawlerCommons::Robots::RobotRules;
+use CrawlerCommons::RobotRules;
 
 
 # VARIABLES/CONSTANTS
@@ -57,11 +57,11 @@ use WWW::CrawlerCommons::Robots::RobotRules;
 #-----------------------------------------------------------------------------#
 has 'current_rules'             => (
     default                     => sub {
-        WWW::CrawlerCommons::Robots::RobotRules->new(
-          _mode => $WWW::CrawlerCommons::Robots::RobotRules::ALLOW_SOME);
+        CrawlerCommons::RobotRules->new(
+          _mode => $CrawlerCommons::RobotRules::ALLOW_SOME);
     },
     is                          => 'ro',
-    isa                         => 'WWW::CrawlerCommons::Robots::RobotRules',
+    isa                         => 'CrawlerCommons::RobotRules',
 );
 #-----------------------------------------------------------------------------#
 has 'is_adding_rules'           => (

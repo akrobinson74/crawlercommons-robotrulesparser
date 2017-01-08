@@ -1,10 +1,10 @@
 =head1 NAME
 
-WWW::CrawlerCommons::Robots::RobotRules - 
+CrawlerCommons::RobotRules - 
 
 =head1 SYNOPSIS
 
- use WWW::CrawlerCommons::Robots::RobotRules;
+ use CrawlerCommons::RobotRules;
 
 =head1 DESCRIPTION
 
@@ -12,7 +12,7 @@ WWW::CrawlerCommons::Robots::RobotRules -
 =cut
 
 ###############################################################################
-package WWW::CrawlerCommons::Robots::RobotRules;
+package CrawlerCommons::RobotRules;
 
 # MODULE IMPORTS
 ########################################
@@ -103,8 +103,7 @@ has '_rules'                    => (
         '_get_rules'            => 'elements',
     },
     is                          => 'ro',
-    isa                         =>
-      'ArrayRef[WWW::CrawlerCommons::Robots::RobotRule]',
+    isa                         => 'ArrayRef[CrawlerCommons::RobotRule]',
     traits                      => ['Array'],
     writer                      => '_set_rules',
 );
@@ -142,8 +141,7 @@ sub add_rule {
     my ($self, $prefix, $allow) = @_;
     $allow = 1 if !$allow && length($prefix) == 0;
     $self->_add_rule(
-      WWW::CrawlerCommons::Robots::RobotRule->new( 
-        _prefix => $prefix, _allow => $allow )
+      CrawlerCommons::RobotRule->new(  _prefix => $prefix, _allow => $allow )
     );
 }
 #-----------------------------------------------------------------------------#
@@ -299,11 +297,11 @@ __PACKAGE__->meta->make_immutable;
 
 =head1 NAME
 
-WWW::CrawlerCommons::Robots::RobotRule - 
+CrawlerCommons::RobotRule - 
 
 =head1 SYNOPSIS
 
- use WWW::CrawlerCommons::Robots::RobotRule;
+ use CrawlerCommons::RobotRule;
 
 =head1 DESCRIPTION
 
@@ -311,7 +309,7 @@ WWW::CrawlerCommons::Robots::RobotRule -
 =cut
 
 ###############################################################################
-package WWW::CrawlerCommons::Robots::RobotRule;
+package CrawlerCommons::RobotRule;
 
 # MODULE IMPORTS
 ########################################
