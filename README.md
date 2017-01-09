@@ -1,2 +1,2 @@
-# www-crawlercommons-robots
-Perl implementation of Google crawler-commons robots
+# crawlercommons-robotrulesparser
+Perl implementation of Google crawler-commons RobotsRulesParser

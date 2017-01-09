@@ -126,10 +126,10 @@ try {
     # test unsupported fields
     subtest 'test unsupported fields', sub { test_unsupported_fields(); };
 
-    # test status code creation - not implemented
-
     # test acap fields
     subtest 'test acap fields', sub { test_acap_fields(); };
+
+    # test status code creation - not implemented
 
     # test crawl delay
     subtest 'test crawl delay', sub { test_crawl_delay(); };
@@ -137,6 +137,7 @@ try {
     # test big crawl delay
     subtest 'test big crawl delay', sub { test_big_crawl_delay(); };
 
+    # test broken krugle robots.txt file
     subtest "test broken krugle rotbots txt file",
       sub { test_broken_krugle_robots_txt_file() };
 

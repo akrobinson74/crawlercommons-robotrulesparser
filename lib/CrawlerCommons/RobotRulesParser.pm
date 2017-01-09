@@ -121,8 +121,6 @@ has 'num_warnings'              => (
 
 =head1 METHODS
 
-=over
-
 =cut
 
 # METHODS
@@ -140,9 +138,20 @@ has 'num_warnings'              => (
 # Instance Methods
 #------------------#
 #-----------------------------------------------------------------------------#
-=item C<< $self->parse_content($url, $content, $mime_type, $crawler_name) >>
+=head2 C<< $self->parse_content($url, $content, $content_type, $robot_name) >>
 
+Parsers robots.txt data in C<$content> for the User-agent(s) specified in
+C<$robot_name>
 
+=over
+
+=item * C<$url>
+
+=item * C<$content>
+
+=item * C<$content_type>
+
+=item * C<$robot_name>
 
 =back
 
