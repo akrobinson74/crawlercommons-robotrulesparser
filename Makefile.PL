@@ -8,7 +8,7 @@ all_from 'lib/CrawlerCommons/RobotRulesParser.pm';
 author   q{Adam K Robinson <akrobinson74@gmail.com>};
 license  'artistic2';
 
-perl_version 5.10.1;
+perl_version 5.010_001;
 
 tests_recursive('t');
 
@@ -30,15 +30,15 @@ build_requires (
 );
 
 requires (
-   #'ABC'                   => 1.6,
-   #'Foo::Bar::Module'      => 5.0401,
    'Const::Fast'            => 0.014,
    'Encode'                 => 2.80,
    'Moose'                  => 2.1804,
    'MooseX::ClassAttribute' => 0.29,
+   'MooseX::Enumeration'    => 0.005,
    'MooseX::Log::Log4perl'  => 0.47,
    'namespace::autoclean'   => 0.28,
    'Try::Tiny'              => 0.24,
+   'Types::Standard'        => 1.000005,
    'URI'                    => 1.71,
    'URI::Escape'            => 3.31,
 );

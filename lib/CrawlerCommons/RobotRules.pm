@@ -442,6 +442,12 @@ __PACKAGE__->meta->make_immutable;
 
 ###############################################################################
 
+=head1 AUTHOR
+
+Adam Robinson <akrobinson74@gmail.com>
+
+=cutq
+
 1;
 
 __END__

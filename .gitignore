@@ -1,3 +1,13 @@
 /.includepath
 /.project
 /inc/**
+/t/kaplan.t
+/blib/
+/CrawlerCommons-RobotRulesParser-0.01.tar.gz
+/Makefile
+/Makefile.old
+/MANIFEST.bak
+/META.yml
+/MYMETA.json
+/MYMETA.yml
+/pm_to_blib

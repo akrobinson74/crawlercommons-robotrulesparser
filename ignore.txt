@@ -16,5 +16,6 @@ inc/
 nytprof.out
 pod2htm*.tmp
 pm_to_blib
-WWW-CrawlerCommons-*
-WWW-CrawlerCommons-*.tar.gz
+t/kaplan.t
+CrawlerCommons-RobotRulesParser*
+CrawlerCommons-RobotRulesParser*.tar.gz
