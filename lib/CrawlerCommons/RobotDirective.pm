@@ -55,7 +55,6 @@ const my $DIRECTIVES_LIST       => [
     'REQUEST_RATE', 'VISIT_TIME', 'ROBOT_VERSION', 'COMMENT',
     # Treated as sitemap directive
     'HTTP'];
-const my $DIRECTIVE_PREFIX_MAP  => __PACKAGE__->load_directives_map;
 const my $PREFIX_DIRECTIVES     => [qw(ACAP_)];
 const my $SPECIAL_DIRECTIVES    => [qw(UNKNOWN MISSING)];
 const my $USERAGENT_MISSPELLINGS=> [qw(useragent useg-agent ser-agent)];
@@ -131,8 +130,6 @@ sub load_directives_map {
     $map->{$_} = $map->{'crawl-delay'} for @{ $CRAWLDELAY_MISSPELLINGS };
     $map->{$_} = $map->{disallow} for @{ $DISALLOW_MISSPELLINGS };
     $map->{$_} = $map->{'user-agent'} for @{ $USERAGENT_MISSPELLINGS };
-
-    say STDERR Data::Dumper->Dump([$map], ['directive_map']) if $DEBUG > 1;
 
     return $map;
 }
