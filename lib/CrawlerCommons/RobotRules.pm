@@ -350,6 +350,7 @@ __PACKAGE__->meta->make_immutable;
 
 =pod
 
+
 =cut
 
 ###############################################################################
@@ -446,7 +447,7 @@ __PACKAGE__->meta->make_immutable;
 
 Adam Robinson <akrobinson74@gmail.com>
 
-=cutq
+=cut
 
 1;
 

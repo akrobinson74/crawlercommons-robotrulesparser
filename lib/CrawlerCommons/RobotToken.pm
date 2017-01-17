@@ -1,16 +1,3 @@
-=head1 NAME
-
-CrawlerCommons::RobotToken - 
-
-=head1 SYNOPSIS
-
- use CrawlerCommons::RobotToken;
-
-=head1 DESCRIPTION
-
-
-=cut
-
 ###############################################################################
 package CrawlerCommons::RobotToken;
 
@@ -53,13 +40,6 @@ const my $TEST                  => $ENV{TEST} // 1;
 
 # Variables
 #------------------#
-
-=head1 VERSION
-
-Version 0.01
-
-=cut
-
 our $VERSION = '0.01';
 
 

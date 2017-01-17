@@ -1,17 +1,3 @@
-
-=head1 NAME
-
-CrawlerCommons::RobotDirective - 
-
-=head1 SYNOPSIS
-
- use CrawlerCommons::RobotDirective;
-
-=head1 DESCRIPTION
-
-
-=cut
-
 ###############################################################################
 package CrawlerCommons::RobotDirective;
 
@@ -65,12 +51,6 @@ const my $VALUES_ENUM_LIST      =>
 
 # Variables
 #------------------#
-=head1 VERSION
-
-Version 0.01
-
-=cut
-
 our $VERSION = '0.01';
 
 

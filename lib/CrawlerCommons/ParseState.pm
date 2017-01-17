@@ -1,17 +1,3 @@
-
-
-=head1 NAME
-
-CrawlerCommons::ParseState - 
-
-=head1 SYNOPSIS
-
- use CrawlerCommons::ParseState;
-
-=head1 DESCRIPTION
-
-
-=cut
 ###############################################################################
 package CrawlerCommons::ParseState;
 
@@ -45,12 +31,6 @@ use CrawlerCommons::RobotRules;
 
 # Variables
 #------------------#
-=head1 VERSION
-
-Version 0.01
-
-=cut
-
 our $VERSION = '0.01';
 
 
