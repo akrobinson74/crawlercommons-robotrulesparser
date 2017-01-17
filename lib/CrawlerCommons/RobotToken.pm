@@ -54,6 +54,15 @@ const my $TEST                  => $ENV{TEST} // 1;
 # Variables
 #------------------#
 
+=head1 VERSION
+
+Version 0.01
+
+=cut
+
+our $VERSION = '0.01';
+
+
 # ATTRIBUTES
 ########################################
 # Class

@@ -87,6 +87,13 @@ const our $UNSET_CRAWL_DELAY    => 0xffffffff * -1;
 
 # Variables
 #------------------#
+=head1 VERSION
+
+Version 0.01
+
+=cut
+
+our $VERSION = '0.01';
 
 # setup logging, if not present
 BEGIN {
