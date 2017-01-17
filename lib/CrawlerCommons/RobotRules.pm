@@ -1,13 +1,38 @@
 =head1 NAME
 
-CrawlerCommons::RobotRules - 
+CrawlerCommons::RobotRules - the result of a parsed robots.txt
 
 =head1 SYNOPSIS
 
  use CrawlerCommons::RobotRules;
+ use CrawlerCommons::RobotRulesParser;
+
+ my $rules_parser = CrawlerCommons::RobotRulesParser->new;
+ 
+ my $content = "User-agent: *\r\nDisallow: *images";
+ my $content_type = "text/plain";
+ my $robot_names = "any-old-robot";
+ my $url = "http://domain.com/";
+
+ my $robot_rules =
+   $rules_parser->parse_content($url, $content, $content_type, $robot_names);
+
+ # obtain the 'mode' of the robot rules object
+ say "Anything Goes!!!!" if $robot_rules->is_allow_all;
+ say "Nothing to see here!" if $robot_rules->is_allow_none;
+ say "Default robot rules mode..." if $robot_rules->is_allow_some;
+
+ # are we allowed to crawl a URL (returns 1 if so, 0 if not)
+ say "We're allowed to crawl the index :)"
+  if $robot_rules->is_allowed( "https://www.domain.com/index.html");
+
+ say "Not allowed to crawl: $_" unless $robot_rules->is_allowed( $_ )
+   for ("http://www.domain.com/images/some_file.png",
+        "http://www.domain.com/images/another_file.png");
 
 =head1 DESCRIPTION
 
+This object is the result of parsing a single robots.txt file
 
 =cut
 
@@ -37,10 +62,10 @@ use namespace::autoclean;
 
 # Moose Pragmas
 #------------------#
+with 'MooseX::Log::Log4perl';
 
 # Custom Modules
 #------------------#
-
 
 
 # VARIABLES/CONSTANTS
@@ -62,6 +87,14 @@ const our $UNSET_CRAWL_DELAY    => 0xffffffff * -1;
 
 # Variables
 #------------------#
+
+# setup logging, if not present
+BEGIN {
+    require Log::Log4perl;
+    Log::Log4perl->easy_init($Log::Log4perl::ERROR)
+      unless $Log::Log4perl::Logger::INITIALIZED;
+}
+
 
 # ATTRIBUTES
 ########################################
@@ -122,6 +155,10 @@ has '_sitemaps'                 => (
 );
 #-----------------------------------------------------------------------------#
 
+=head1 METHODS
+
+=cut
+
 # METHODS
 ########################################
 # Constructor
@@ -150,6 +187,24 @@ sub add_sitemap {
     $self->_add_sitemap( $sitemap );
 }
 #-----------------------------------------------------------------------------#
+=head2 C<< my $true_or_false = $robot_rules->is_allowed( $url ) >>
+
+Returns 1 if we're allowed to crawl the URL represented by C<$url> and 0
+otherwise.  Will return 1 if the method C<is_allow_all()> returns true,
+otherwise, if C<is_allow_none> is false, returns 1 if there is an allow rule or
+no disallow rule for this URL.
+
+=over
+
+=item * C<$url>
+
+The URL whose path is used to search for a matching rule within the object for
+evaluation.
+
+=back
+
+=cut
+
 sub is_allowed {
     my ($self, $url) = @_;
     return 0 if $self->is_allow_none;
@@ -169,15 +224,7 @@ sub is_allowed {
 #-----------------------------------------------------------------------------#
 sub sort_rules {
     my $self = shift;
-##    my $unsored_rules = $self->_rules;
-##    my @sorted_rules =
-#    $self->_sort_rules( 
-#      sub {
-#          length( $_[1]->_prefix ) <=> length( $_[0]->_prefix ) ||
-#            $_[1]->_allow <=> $_[0]->_allow;
-#      }
-#    );
-#    say STDERR Data::Dumper->Dump([$unsored_rules, \@sorted_rules],['before','after']);
+
     $self->_set_rules(
         [ sort {length( $b->_prefix ) <=> length( $a->_prefix ) ||
                 $b->_allow <=> $a->_allow} @{ $self->_rules }
@@ -227,7 +274,7 @@ sub _rule_matches {
         my $wildcard_pos = index( $pattern, '*', $pattern_pos );
         $wildcard_pos = $pattern_end if $wildcard_pos == -1;
 
-        say STDERR <<"DUMP" if $DEBUG;
+        $self->log->trace( <<"DUMP" );
 # _rule_matches wildcard...
 ############################
 pattern         $pattern
@@ -265,8 +312,7 @@ DUMP
             while ( ( $pattern_pos < $wildcard_pos ) &&
                     ( $text_pos < $text_end ) ) {
 
-                # DEBUG
-                say STDERR <<"DUMP" if $DEBUG > 2;
+                $self->log->trace( <<"DUMP" );
 # _rule_matches dump
 #####################
 text        $text
@@ -295,16 +341,7 @@ __PACKAGE__->meta->make_immutable;
 
 ###############################################################################
 
-=head1 NAME
-
-CrawlerCommons::RobotRule - 
-
-=head1 SYNOPSIS
-
- use CrawlerCommons::RobotRule;
-
-=head1 DESCRIPTION
-
+=pod
 
 =cut
 

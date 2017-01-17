@@ -1,6 +1,6 @@
 =head1 NAME
 
-CrawlerCommons::RobotRulesParser - 
+CrawlerCommons::RobotRulesParser - parser for robots.txt files
 
 =head1 SYNOPSIS
 
@@ -25,6 +25,26 @@ CrawlerCommons::RobotRulesParser -
 
 =head1 DESCRIPTION
 
+This module is a fairly close reproduction of the Crawler-Commons
+L<SimpleRobotRulesParser|http://crawler-commons.github.io/crawler-commons/0.7/crawlercommons/robots/SimpleRobotRulesParser.html>
+
+From BaseRobotsParser javadoc:
+
+ Parse the robots.txt file in <i>content</i>, and return rules appropriate
+ for processing paths by <i>userAgent</i>. Note that multiple agent names
+ may be provided as comma-separated values; the order of these shouldn't
+ matter, as the file is parsed in order, and each agent name found in the
+ file will be compared to every agent name found in robotNames.
+ Also note that names are lower-cased before comparison, and that any
+ robot name you pass shouldn't contain commas or spaces; if the name has
+ spaces, it will be split into multiple names, each of which will be
+ compared against agent names in the robots.txt file. An agent name is
+ considered a match if it's a prefix match on the provided robot name. For
+ example, if you pass in "Mozilla Crawlerbot-super 1.0", this would match
+ "crawlerbot" as the agent name, because of splitting on spaces,
+ lower-casing, and the prefix match rule.
+
+The method failedFetch is not implemented.
 
 =cut
 
@@ -138,20 +158,33 @@ has 'num_warnings'              => (
 # Instance Methods
 #------------------#
 #-----------------------------------------------------------------------------#
-=head2 C<< $self->parse_content($url, $content, $content_type, $robot_name) >>
+=head2 C<< my $robot_rules = $rules_parser->parse_content($url, $content, $content_type, $robot_name) >>
 
 Parsers robots.txt data in C<$content> for the User-agent(s) specified in
-C<$robot_name>
+C<$robot_name> returning a C<CrawlerCommons::RobotRules> object corresponding
+to the rules defined for C<$robot_name>.
 
 =over
 
 =item * C<$url>
 
+URL string that's parsed in a URI object to provide scheme, authority, and path
+for sitemap directive values.  If the directive's value begins with a '/', it
+overrides the path value provided by this URL context string.
+
 =item * C<$content>
+
+The text content of the robots.txt file to be parsed.
 
 =item * C<$content_type>
 
+The content-type of the robots.txt content to be parsed.  Assumes text/plain by
+default.  If type is text/html, the parser will attempt to strip-out html tags
+from the content.
+
 =item * C<$robot_name>
+
+A string signifying for which user-agent(s) the rules should be extracted.
 
 =back
 
@@ -197,7 +230,7 @@ sub parse_content {
     my $has_html = 0;
     if ( $is_html_type || ($content // '') =~ $SIMPLE_HTML_PATTERN ) {
         if ( ($content // '') !~ $USER_AGENT_PATTERN ) {
-            $self->log->trace( "Found non-robots.txt HTML file: $url");
+            $self->log->warn( "Found non-robots.txt HTML file: $url");
 
             return CrawlerCommons::RobotRules->new(
               _mode => $CrawlerCommons::RobotRules::ALLOW_ALL);
@@ -205,11 +238,11 @@ sub parse_content {
 
         else {
             if ( $is_html_type ) {
-                $self->log->debug(
+                $self->log->info(
                   "HTML content type returned for robots.txt file: $url");
             }
             else {
-                $self->log->debug("Found HTML in robots.txt file: $url");
+                $self->log->warn("Found HTML in robots.txt file: $url");
             }
 
             $has_html = 1;
@@ -221,11 +254,10 @@ sub parse_content {
         url => $url, target_name => lc($robot_name) );
 
     # DEBUG
-    $self->log->error(Data::Dumper->Dump([$parse_state],['parse_state1']))
-      if $DEBUG > 2;
+    $self->log->trace(Data::Dumper->Dump([$parse_state],['parse_state1']));
 
     for my $line ( split( m!(?:\n|\r|\r\n|\x0085|\x2028|\x2029)!, $content) ) {
-        $self->log->debug("Input Line: [$line]\n");
+        $self->log->trace("Input Line: [$line]\n");
 
         # strip html tags
         $line =~ s!<[^>]+>!!g if $has_html;
@@ -297,9 +329,7 @@ sub parse_content {
         } if $robot_token->directive->is_unknown;
     }
 
-    # DEBUG
-    $self->log->error(Data::Dumper->Dump([$parse_state],['parse_state2']))
-      if $DEBUG > 2;
+    $self->log->trace(Data::Dumper->Dump([$parse_state],['parse_state2']));
 
     my $robot_rules = $parse_state->current_rules();
     if ( $robot_rules->crawl_delay > $MAX_CRAWL_DELAY ) {
@@ -319,8 +349,7 @@ sub parse_content {
 sub _handle_allow_or_disallow {
     my ($self, $state, $token, $allow_or_disallow ) = @_;
 
-    $self->log->debug(Data::Dumper->Dump([\@_],['_handle_allow_or_disallow']))
-      if $DEBUG > 2;
+    $self->log->trace(Data::Dumper->Dump([\@_],['_handle_allow_or_disallow']));
 
     return if $state->is_skip_agents;
 
@@ -352,8 +381,7 @@ sub _handle_allow { shift->_handle_allow_or_disallow( @_, 1 ); }
 sub _handle_crawl_delay {
     my ($self, $state, $token) = @_;
 
-    $self->log->debug(Data::Dumper->Dump([$state, $token],['state','token']))
-      if $DEBUG > 1;
+    $self->log->trace(Data::Dumper->Dump([$state, $token],['state','token']));
 
     return if $state->is_skip_agents;
 
@@ -401,7 +429,7 @@ sub _handle_sitemap {
         my $sitemap_url = URI->new_abs( $sitemap, URI->new( $state->url ) );
         my $host = $sitemap_url->host() // '';
 
-        $self->log->debug(<<"DUMP") if $DEBUG > 1;
+        $self->log->trace(<<"DUMP");
 # _handle_sitemap
 ###################
 sitemap     $sitemap
@@ -466,7 +494,7 @@ sub _report_warning {
 sub _tokenize {
     my ($self, $line) = @_;
 
-    $self->log->debug("Parsing line: [$line]") if $DEBUG;
+    $self->log->trace("Parsing line: [$line]");
 
     my $lower_line = lc( $line );
     my ($directive) = ($lower_line =~ m!^([^:\s]+)!);
@@ -475,25 +503,19 @@ sub _tokenize {
     if ( $directive =~ m!^acap\-! ||
          CrawlerCommons::RobotDirective->directive_exists( $directive ) ){
 
-        my ($d1, $d2);
         my $data_portion = substr($line, length( $directive ));
-        $d1 = ( my $data ) = ( $data_portion =~ m!$COLON_DIRECTIVE_PATTERN! );
-        $d2 = ( $data ) = ( $data_portion =~ m!$BLANK_DIRECTIVE_PATTERN! )
+        ( my $data ) = ( $data_portion =~ m!$COLON_DIRECTIVE_PATTERN! );
+        ( $data ) = ( $data_portion =~ m!$BLANK_DIRECTIVE_PATTERN! )
           unless defined $data;
         $data //= '';
         $data =~ s!^\s+|\s+$!!;
 
-        $d1 //= '';
-        $d2 //= '';
-
-        $self->log->debug(<<"DUMP") if $DEBUG;
+        $self->log->trace(<<"DUMP");
 # _tokenize dump
 #################
 line            [$line]
 directive       [$directive]
 data_portion    [$data_portion]
-d1              [$d1]
-d2              [$d2]
 data            [$data]
 DUMP
 

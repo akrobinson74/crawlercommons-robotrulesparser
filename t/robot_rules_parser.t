@@ -24,7 +24,6 @@ use utf8;
 # CPAN/Core Imports
 #----------------------#
 use Const::Fast;
-use File::HomeDir;
 use Log::Log4perl qw(:easy);
 use Path::Tiny;
 use Test::Most;
