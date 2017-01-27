@@ -462,20 +462,20 @@ sub _handle_user_agent {
          for my $agent_name ( split( m! |\t|,!, $token->data ) ) {
              ( $agent_name = lc( $agent_name // '' ) ) =~ s!^\s+|\s+$!!g;
 
-             if ( $agent_name eq '*' && !$state->is_matched_wildcard ) {
-                 $state->is_matched_wildcard( 1 );
-                 $state->is_adding_rules( 1 );
-             }
-             elsif ($agent_name ne '') {
-                 for my $target_name_split ( split(/ /, $target_name) ) {
-                     if (index( $target_name_split, $agent_name ) == 0 ) {
-                         $state->is_matched_real_name( 1 );
-                         $state->is_adding_rules( 1 );
-                         $state->clear_rules;
-                         last;
-                     }
-                 }
-             }
+            if ( $agent_name eq '*' && !$state->is_matched_wildcard ) {
+                $state->is_matched_wildcard( 1 );
+                $state->is_adding_rules( 1 );
+            }
+            elsif ($agent_name ne '') {
+                for my $target_name_split ( split(/ /, $target_name) ) {
+                    if (index( $target_name_split, $agent_name ) == 0 ) {
+                        $state->is_matched_real_name( 1 );
+                        $state->is_adding_rules( 1 );
+                        $state->clear_rules;
+                        last;
+                    }
+                }
+            }
          }
     }
 }
