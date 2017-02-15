@@ -2,6 +2,7 @@
 /.project
 /inc/**
 /t/kaplan.t
+/t/telmore.t
 /blib/
 /CrawlerCommons-RobotRulesParser-0.01.tar.gz
 /Makefile
