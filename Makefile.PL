@@ -13,11 +13,8 @@ perl_version 5.010_001;
 tests_recursive('t');
 
 resources (
-   #homepage   => 'http://yourwebsitehere.com',
-   #IRC        => 'irc://irc.perl.org/#WWW-CrawlerCommons',
    license    => 'http://www.perlfoundation.org/artistic_license_2_0',
    repository => 'git@github.com:akrobinson74/crawlercommons-robotrulesparser.git',
-   #repository => 'https://bitbucket.org/Adam K Robinson/WWW-CrawlerCommons',
    bugtracker => 'http://rt.cpan.org/NoAuth/Bugs.html?Dist=CrawlerCommons-RobotRulesParser',
 );
 
