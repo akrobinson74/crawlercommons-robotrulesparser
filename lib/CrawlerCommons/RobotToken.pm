@@ -40,7 +40,7 @@ const my $TEST                  => $ENV{TEST} // 1;
 
 # Variables
 #------------------#
-our $VERSION = '0.01';
+our $VERSION = '0.03';
 
 
 # ATTRIBUTES

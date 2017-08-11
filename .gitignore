@@ -1,6 +1,6 @@
 /.includepath
 /.project
-/inc/**
+/inc
 /t/kaplan.t
 /t/telmore.t
 /blib/
@@ -14,3 +14,4 @@
 /pm_to_blib
 *.iml
 *.idea
+/CrawlerCommons-RobotRulesParser-*.tar.gz

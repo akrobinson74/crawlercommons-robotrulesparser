@@ -51,7 +51,7 @@ const my $VALUES_ENUM_LIST      =>
 
 # Variables
 #------------------#
-our $VERSION = '0.01';
+our $VERSION = '0.03';
 
 
 # MOOSE ATTRIBUTES
