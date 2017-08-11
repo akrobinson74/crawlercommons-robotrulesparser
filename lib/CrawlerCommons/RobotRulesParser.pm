@@ -111,7 +111,7 @@ BEGIN {
 
 =head1 VERSION
 
-Version 0.01
+Version 0.03
 
 =cut
 

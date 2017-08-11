@@ -89,7 +89,7 @@ const our $UNSET_CRAWL_DELAY    => 0xffffffff * -1;
 #------------------#
 =head1 VERSION
 
-Version 0.01
+Version 0.03
 
 =cut
 
